@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from models import db, Restaurant, RestaurantPizza, Pizza
 from flask_migrate import Migrate
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_restful import Api, Resource
 import os
 
@@ -23,6 +23,38 @@ api = Api(app)
 @app.route("/")
 def index():
     return "<h1>Code challenge</h1>"
+
+class Restaurants(Resource):
+    def get(self):
+        restaurants = [
+            restaurant.to_dict(only=(
+                'address', 'id', 'name'
+            )) 
+            for restaurant in Restaurant.query.all()]
+        return restaurants, 200
+    
+class RestaurantById(Resource):
+    def get(self, id):
+        restaurant = Restaurant.query.filter(Restaurant.id == id).first()
+        if restaurant:
+            restaurant_dict = restaurant.to_dict(only=(
+                'address', 'id', 'name', 'restaurant_pizzas'
+            ))
+            return restaurant_dict, 200
+        else:
+            return {"error": "Restaurant not found"}, 404
+        
+    def delete(self, id):
+        restaurant = Restaurant.query.filter(Restaurant.id == id).first()
+        if restaurant:
+            db.session.delete(restaurant)
+            db.session.commit()
+            return {}, 204
+        else:
+            return {"error": "Restaurant not found"}, 404
+
+api.add_resource(Restaurants, '/restaurants')
+api.add_resource(RestaurantById, '/restaurants/<int:id>')
 
 
 if __name__ == "__main__":
