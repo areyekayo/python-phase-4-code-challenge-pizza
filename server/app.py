@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from models import db, Restaurant, RestaurantPizza, Pizza
 from flask_migrate import Migrate
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request
 from flask_restful import Api, Resource
 import os
 
@@ -18,7 +18,6 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 api = Api(app)
-
 
 @app.route("/")
 def index():
@@ -61,10 +60,31 @@ class Pizzas(Resource):
             )) for pizza in Pizza.query.all()
         ]
         return pizzas, 200
+    
+class RestaurantPizzas(Resource):
+    def post(self):
+        data = request.get_json()
+        try:
+            restaurant_pizza = RestaurantPizza(
+               price=data['price'],
+               pizza_id=data['pizza_id'],
+               restaurant_id=data['restaurant_id'] 
+            )
+            db.session.add(restaurant_pizza)
+            db.session.commit()
+
+            restaurant_pizza_dict = restaurant_pizza.to_dict(only=(
+                'id', 'pizza', 'pizza_id', 'price', 'restaurant', 'restaurant_id'))
+
+            return restaurant_pizza_dict, 201
+        except Exception:
+            db.session.rollback()
+            return {"errors": ["validation errors"]}, 400
 
 api.add_resource(Restaurants, '/restaurants')
 api.add_resource(RestaurantById, '/restaurants/<int:id>')
 api.add_resource(Pizzas, '/pizzas')
+api.add_resource(RestaurantPizzas, '/restaurant_pizzas')
 
 
 if __name__ == "__main__":
