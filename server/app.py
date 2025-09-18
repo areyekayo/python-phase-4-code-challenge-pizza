@@ -53,8 +53,18 @@ class RestaurantById(Resource):
         else:
             return {"error": "Restaurant not found"}, 404
 
+class Pizzas(Resource):
+    def get(self):
+        pizzas = [
+            pizza.to_dict(only=(
+                'id', 'ingredients', 'name'
+            )) for pizza in Pizza.query.all()
+        ]
+        return pizzas, 200
+
 api.add_resource(Restaurants, '/restaurants')
 api.add_resource(RestaurantById, '/restaurants/<int:id>')
+api.add_resource(Pizzas, '/pizzas')
 
 
 if __name__ == "__main__":
